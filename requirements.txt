@@ -4,3 +4,5 @@ numpy
 pillow
 streamlit-webrtc
 streamlit-drawable-canvas
+st-gsheets
+# Force rebuild for st-gsheets
