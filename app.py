@@ -928,6 +928,11 @@ if image is not None:
                             img_pil = Image.fromarray(image_u8).convert("RGB")
                             img_resized = img_pil.resize((canvas_width, canvas_height))
                             
+                            # --- DEBUG START ---
+                            st.write(f"Debug Info: Image Shape: {image.shape}, Dtype: {image.dtype}, Resized Size: {img_resized.size}")
+                            st.image(img_resized, caption="Debug: This image should appear in canvas", use_column_width=True)
+                            # --- DEBUG END ---
+                            
                             col_tool1, col_tool2 = st.columns([1, 2])
                             with col_tool1:
                                 brush_mode = st.radio("브러쉬 모드", ["추가 (Add)", "제거 (Remove)"])
