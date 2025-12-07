@@ -928,10 +928,8 @@ if image is not None:
                             img_pil = Image.fromarray(image_u8).convert("RGB")
                             img_resized = img_pil.resize((canvas_width, canvas_height))
                             
-                            # --- DEBUG START ---
-                            st.write(f"Debug Info: Image Shape: {image.shape}, Dtype: {image.dtype}, Resized Size: {img_resized.size}")
-                            st.image(img_resized, caption="Debug: This image should appear in canvas", use_column_width=True)
-                            # --- DEBUG END ---
+                            img_pil = Image.fromarray(image_u8).convert("RGB")
+                            img_resized = img_pil.resize((canvas_width, canvas_height))
                             
                             col_tool1, col_tool2 = st.columns([1, 2])
                             with col_tool1:
@@ -946,6 +944,10 @@ if image is not None:
                                 stroke_color = "#FF0000" # Red
                                 fill_color = "rgba(255, 0, 0, 0.3)"
                             
+                            # Generate unique key based on image content to force refresh
+                            import hashlib
+                            img_hash = hashlib.md5(image.tobytes()).hexdigest()
+                            
                             canvas_result = st_canvas(
                                 fill_color=fill_color,
                                 stroke_width=stroke_width,
@@ -955,7 +957,7 @@ if image is not None:
                                 height=canvas_height,
                                 width=canvas_width,
                                 drawing_mode="freedraw",
-                                key="correction_canvas_v2",
+                                key=f"canvas_{img_hash}",
                             )
                             
                             if canvas_result.image_data is not None:
