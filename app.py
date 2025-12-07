@@ -4,6 +4,9 @@ import mediapipe as mp
 import numpy as np
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
+import time
 
 # Page Config
 st.set_page_config(page_title="AI Beauty Advisor", page_icon="💄")
@@ -505,6 +508,61 @@ if image is not None:
                     # Display Palette Strip
                     st.image(palette_strip, caption="✨ 당신의 베스트 컬러 팔레트", use_column_width=True)
 
+                    # --- Data Collection Form (Google Sheets) ---
+                    st.divider()
+                    st.subheader("💌 결과 저장 및 뉴스레터 구독")
+                    st.caption("진단 결과를 저장하고, 더 많은 뷰티 팁을 받아보세요!")
+
+                    with st.form("data_collection_form"):
+                        col_form1, col_form2 = st.columns(2)
+                        with col_form1:
+                            user_name = st.text_input("이름 (Name)")
+                        with col_form2:
+                            user_email = st.text_input("이메일 (Email)")
+                        
+                        user_comment = st.text_area("남기고 싶은 말 (선택사항)", placeholder="서비스 이용 후기나 궁금한 점을 적어주세요.")
+                        
+                        submit_button = st.form_submit_button("💾 결과 저장하기 (Save to Database)")
+
+                        if submit_button:
+                            if not user_name or not user_email:
+                                st.warning("이름과 이메일을 모두 입력해주세요.")
+                            else:
+                                try:
+                                    # Connect to Google Sheets
+                                    conn = st.connection("gsheets", type=GSheetsConnection)
+                                    
+                                    # Prepare new data
+                                    new_data = pd.DataFrame([
+                                        {
+                                            "Timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                            "Name": user_name,
+                                            "Email": user_email,
+                                            "Season": predicted_season,
+                                            "Best Colors": ", ".join(recommended_colors),
+                                            "Comment": user_comment
+                                        }
+                                    ])
+                                    
+                                    # Read existing data (to append)
+                                    # Note: This might fail if sheet is empty or doesn't exist, handle gracefully
+                                    try:
+                                        existing_data = conn.read(ttl=0)
+                                        updated_data = pd.concat([existing_data, new_data], ignore_index=True)
+                                    except Exception:
+                                        # If read fails (e.g. empty sheet), start with new data
+                                        updated_data = new_data
+                                    
+                                    # Update Sheet
+                                    conn.update(data=updated_data)
+                                    
+                                    st.success("✅ 정보가 성공적으로 저장되었습니다! 감사합니다.")
+                                    st.balloons()
+                                    
+                                except Exception as e:
+                                    st.error(f"저장에 실패했습니다. 관리자에게 문의하세요.\nError: {e}")
+                                    st.info("※ 배포 환경에서 Google Sheets 연결 설정이 필요합니다.")
+
                 st.divider()
                 
                 tab1, tab2, tab3 = st.tabs(["🎨 퍼스널 컬러 상세", "📐 황금비율 분석 상세", "💄 가상 메이크업 (Beta)"])
@@ -860,7 +918,14 @@ if image is not None:
                             canvas_width = 600
                             aspect_ratio = image.shape[0] / image.shape[1]
                             canvas_height = int(canvas_width * aspect_ratio)
-                            img_pil = Image.fromarray(image)
+                            
+                            # Ensure image is uint8 and RGB for PIL
+                            if image.dtype != np.uint8:
+                                image_u8 = (image * 255).astype(np.uint8) if image.max() <= 1.0 else image.astype(np.uint8)
+                            else:
+                                image_u8 = image
+                                
+                            img_pil = Image.fromarray(image_u8).convert("RGB")
                             img_resized = img_pil.resize((canvas_width, canvas_height))
                             
                             col_tool1, col_tool2 = st.columns([1, 2])
@@ -885,7 +950,7 @@ if image is not None:
                                 height=canvas_height,
                                 width=canvas_width,
                                 drawing_mode="freedraw",
-                                key="correction_canvas",
+                                key="correction_canvas_v2",
                             )
                             
                             if canvas_result.image_data is not None:
