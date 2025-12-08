@@ -14,10 +14,14 @@ st.set_page_config(page_title="AI Beauty Advisor", page_icon="💄")
 # --- 🎨 CSS for Live Face Guide ---
 st.markdown(
     """
+    """
     <style>
     /* Camera Input Container */
     div[data-testid="stCameraInput"] {
         position: relative;
+        width: 100%;
+        max-width: 400px; /* Limit max width for desktop */
+        margin: 0 auto;
     }
     
     /* Face Guide Overlay */
@@ -27,10 +31,12 @@ st.markdown(
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 250px; /* Adjust width for face */
-        height: 330px; /* Adjust height for face */
+        width: 60vw; /* Responsive width */
+        height: 80vw; /* Responsive height */
+        max_width: 250px;
+        max_height: 330px;
         border: 3px dashed rgba(255, 255, 255, 0.7); /* Dotted white line */
-        border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; /* Inverted Egg shape (Wider top, narrower bottom) */
+        border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; /* Inverted Egg shape */
         box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); /* Dim the outside */
         pointer-events: none; /* Allow clicking through */
         z-index: 99;
@@ -40,15 +46,25 @@ st.markdown(
     div[data-testid="stCameraInput"]::before {
         content: "점선 안에 얼굴을 맞춰주세요";
         position: absolute;
-        top: 15%;
+        top: 10%;
         left: 50%;
         transform: translateX(-50%);
         color: white;
         font-weight: bold;
-        font-size: 1.2rem;
+        font-size: 1rem;
         text-shadow: 1px 1px 2px black;
         z-index: 100;
         pointer-events: none;
+        white-space: nowrap;
+    }
+
+    /* Mobile Friendly Adjustments */
+    @media (max-width: 600px) {
+        .stButton > button {
+            width: 100%; /* Full width buttons on mobile */
+            padding: 0.5rem 1rem;
+            font-size: 1.1rem;
+        }
     }
     </style>
     """,
@@ -165,7 +181,7 @@ class VideoProcessor(VideoTransformerBase):
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 # Input Source Selection
-input_source = st.radio("이미지 입력 방식", ["사진 업로드", "실시간 자동 촬영 (Beta)"])
+input_source = st.radio("이미지 입력 방식", ["사진 업로드", "카메라 촬영 (Mobile)", "실시간 자동 촬영 (PC 권장)"])
 
 # Initialize Session State
 if "captured_image" not in st.session_state:
@@ -182,7 +198,22 @@ if input_source == "사진 업로드":
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         st.image(image, caption='업로드된 사진', use_column_width=True)
 
-elif input_source == "실시간 자동 촬영 (Beta)":
+elif input_source == "카메라 촬영 (Mobile)":
+    st.session_state["captured_image"] = None # Reset
+    st.info("핸드폰 카메라로 셀카를 찍어주세요! (밝은 곳에서 정면으로)")
+    
+    camera_image = st.camera_input("찰칵! 📸")
+    
+    if camera_image is not None:
+        # To read image file buffer with OpenCV:
+        bytes_data = camera_image.getvalue()
+        cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+        image = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+        
+        st.success("📸 촬영 완료!")
+        # st.image(image, caption='촬영된 이미지', use_column_width=True) # st.camera_input shows it automatically
+
+elif input_source == "실시간 자동 촬영 (PC 권장)":
     st.info("1. 카메라를 켜고 가이드에 얼굴을 맞추세요.\n2. 초록색 박스가 뜨고 'CAPTURED' 메시지가 나오면...\n3. 자동으로 사진이 아래에 뜹니다!")
     
     ctx = webrtc_streamer(
