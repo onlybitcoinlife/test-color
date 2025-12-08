@@ -12,52 +12,8 @@ import time
 st.set_page_config(page_title="AI Beauty Advisor", page_icon="💄")
 
 # --- 🎨 CSS for Live Face Guide ---
-st.markdown(
     """
-
     <style>
-    /* Camera Input Container */
-    div[data-testid="stCameraInput"] {
-        position: relative;
-        width: 100%;
-        max-width: 400px; /* Limit max width for desktop */
-        margin: 0 auto;
-    }
-    
-    /* Face Guide Overlay */
-    div[data-testid="stCameraInput"]::after {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 60vw; /* Responsive width */
-        height: 80vw; /* Responsive height */
-        max_width: 250px;
-        max_height: 330px;
-        border: 3px dashed rgba(255, 255, 255, 0.7); /* Dotted white line */
-        border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; /* Inverted Egg shape */
-        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); /* Dim the outside */
-        pointer-events: none; /* Allow clicking through */
-        z-index: 99;
-    }
-    
-    /* Guide Text */
-    div[data-testid="stCameraInput"]::before {
-        content: "점선 안에 얼굴을 맞춰주세요";
-        position: absolute;
-        top: 10%;
-        left: 50%;
-        transform: translateX(-50%);
-        color: white;
-        font-weight: bold;
-        font-size: 1rem;
-        text-shadow: 1px 1px 2px black;
-        z-index: 100;
-        pointer-events: none;
-        white-space: nowrap;
-    }
-
     /* Mobile Friendly Adjustments */
     @media (max-width: 600px) {
         .stButton > button {
