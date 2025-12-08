@@ -138,7 +138,7 @@ class VideoProcessor(VideoTransformerBase):
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 # Input Source Selection
-input_source = st.radio("이미지 입력 방식", ["고화질 촬영/업로드 (권장)", "빠른 카메라 (웹캠)", "실시간 자동 촬영 (PC)"])
+input_source = st.radio("이미지 입력 방식", ["고화질 촬영/업로드 (권장)", "실시간 라이브 (고화질 Beta)", "빠른 카메라 (웹캠)", "실시간 자동 촬영 (PC)"])
 
 # Initialize Session State
 if "captured_image" not in st.session_state:
@@ -155,6 +155,33 @@ if input_source == "고화질 촬영/업로드 (권장)":
         image = cv2.imdecode(file_bytes, 1)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         st.image(image, caption='업로드된 사진', use_column_width=True)
+
+elif input_source == "실시간 라이브 (고화질 Beta)":
+    st.info("📡 고화질 라이브 모드입니다. (데이터 소모 주의)")
+    
+    # HD Constraints (1280x720)
+    # Note: Mobile browsers might ignore this if not supported, but we try to request it.
+    video_constraints = {
+        "width": {"ideal": 1280, "min": 640},
+        "height": {"ideal": 720, "min": 480},
+        "facingMode": "user" # Front camera
+    }
+    
+    ctx = webrtc_streamer(
+        key="high_quality_stream",
+        mode=WebRtcMode.SENDRECV,
+        video_processor_factory=VideoProcessor,
+        media_stream_constraints={"video": video_constraints, "audio": False},
+        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}, # STUN Server
+        async_processing=True,
+    )
+    
+    # Capture Logic (Same as Auto but with manual button for clarity)
+    if ctx.video_processor:
+        if st.button("📸 찰칵! (지금 화면 캡처)"):
+            if hasattr(ctx.video_processor, 'latest_frame') and ctx.video_processor.latest_frame is not None:
+                st.session_state["captured_image"] = ctx.video_processor.latest_frame
+                st.rerun()
 
 elif input_source == "빠른 카메라 (웹캠)":
     st.session_state["captured_image"] = None # Reset
