@@ -138,7 +138,7 @@ class VideoProcessor(VideoTransformerBase):
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 # Input Source Selection
-input_source = st.radio("이미지 입력 방식", ["사진 업로드", "카메라 촬영 (Mobile)", "실시간 자동 촬영 (PC 권장)"])
+input_source = st.radio("이미지 입력 방식", ["고화질 촬영/업로드 (권장)", "빠른 카메라 (웹캠)", "실시간 자동 촬영 (PC)"])
 
 # Initialize Session State
 if "captured_image" not in st.session_state:
@@ -146,8 +146,9 @@ if "captured_image" not in st.session_state:
 
 image = None
 
-if input_source == "사진 업로드":
+if input_source == "고화질 촬영/업로드 (권장)":
     st.session_state["captured_image"] = None # Reset capture if switching modes
+    st.info("💡 **꿀팁**: 핸드폰에서는 '사진 보관함' 뿐만 아니라 **'사진 찍기'**를 선택하면 고화질로 바로 찍을 수 있습니다!")
     uploaded_file = st.file_uploader("얼굴 정면 사진을 올려주세요", type=["jpg", "jpeg", "png"])
     if uploaded_file is not None:
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
@@ -155,8 +156,9 @@ if input_source == "사진 업로드":
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         st.image(image, caption='업로드된 사진', use_column_width=True)
 
-elif input_source == "카메라 촬영 (Mobile)":
+elif input_source == "빠른 카메라 (웹캠)":
     st.session_state["captured_image"] = None # Reset
+    st.warning("⚠️ 웹캠 모드는 화질이 낮을 수 있습니다. 정확한 분석을 위해 **'고화질 촬영/업로드'**를 추천합니다.")
     st.info("핸드폰 카메라로 셀카를 찍어주세요! (밝은 곳에서 정면으로)")
     
     camera_image = st.camera_input("찰칵! 📸")
@@ -170,7 +172,7 @@ elif input_source == "카메라 촬영 (Mobile)":
         st.success("📸 촬영 완료!")
         # st.image(image, caption='촬영된 이미지', use_column_width=True) # st.camera_input shows it automatically
 
-elif input_source == "실시간 자동 촬영 (PC 권장)":
+elif input_source == "실시간 자동 촬영 (PC)":
     st.info("1. 카메라를 켜고 가이드에 얼굴을 맞추세요.\n2. 초록색 박스가 뜨고 'CAPTURED' 메시지가 나오면...\n3. 자동으로 사진이 아래에 뜹니다!")
     
     ctx = webrtc_streamer(
