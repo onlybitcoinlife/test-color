@@ -12,6 +12,7 @@ import time
 st.set_page_config(page_title="AI Beauty Advisor", page_icon="💄")
 
 # --- 🎨 CSS for Live Face Guide ---
+st.markdown(
     """
     <style>
     /* Mobile Friendly Adjustments */
